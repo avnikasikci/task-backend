@@ -24,8 +24,9 @@ export class UsersController {
 
   @Get()
   async findAll(): Promise<UsersEntity[]> {
-    return await this.usersService.findAll();
+    return await this.usersService.getAllCache();
   }
+
   @UsePipes(new ValidationPipe())
   @Post()
   async create(@Body('users') userData: CreateUserDTO) {
@@ -40,5 +41,4 @@ export class UsersController {
   async delete(@Param() params): Promise<any> {
     return this.usersService.remove(params.slug);
   }
-
 }

@@ -37,8 +37,8 @@ export class TaskController {
     return await this.taskService.findAll();
   }
   @Get('getAll')
-  async getAll(): Promise<TaskEntity[]> {
-    return await this.taskService.getAll();
+  async getAll(): Promise<TaskDTO[]> {
+    return await this.taskService.getAllDTOCache();
   }
   @Get('getOne/:slug')
   async getOne(@Request() req, @Param() params): Promise<TaskDTO> {

@@ -9,7 +9,7 @@ import { UsersController } from './controllers/usersController';
 import { UsersEntity } from './dataAccess/entity/users.entity';
 import { UsersService } from './dataAccess/services/usersService';
 
-import { Module } from '@nestjs/common';
+import { CacheModule, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -19,7 +19,7 @@ import { TaskModule } from './dataAccess/module/task.module';
 import { TaskController } from './controllers/taskController';
 import { TaskLogModule } from './dataAccess/module/taskLog.module';
 import { TaskLog, TaskLogSchema } from './dataAccess/entity/taskLog.entity';
-
+import * as redisStore from 'cache-manager-redis-store';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -39,6 +39,11 @@ import { TaskLog, TaskLogSchema } from './dataAccess/entity/taskLog.entity';
     }),
     MongooseModule.forRoot('mongodb://localhost/taskLog'),
     MongooseModule.forFeature([{ name: TaskLog.name, schema: TaskLogSchema }]),
+    CacheModule.register({
+      store: redisStore,
+      host: 'localhost',
+      port: 6379,
+    }),
 
     UsersModule,
     TaskModule,

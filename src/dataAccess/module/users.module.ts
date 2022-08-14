@@ -1,6 +1,9 @@
 import { AuthService } from 'src/dataAccess/services/authService';
 import { JwtService } from '@nestjs/jwt';
+import * as redisStore from 'cache-manager-redis-store';
+
 import {
+  CacheModule,
   MiddlewareConsumer,
   Module,
   NestModule,
@@ -12,7 +15,14 @@ import { UsersEntity } from '../entity/users.entity';
 import { UsersService } from '../services/usersService';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UsersEntity])],
+  imports: [
+    TypeOrmModule.forFeature([UsersEntity]),
+    CacheModule.register({
+      store: redisStore,
+      host: 'localhost',
+      port: 6379,
+    }),
+  ],
   exports: [TypeOrmModule, UsersService],
   providers: [UsersService, JwtService, AuthService],
 })

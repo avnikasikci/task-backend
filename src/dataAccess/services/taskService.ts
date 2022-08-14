@@ -4,13 +4,14 @@ import { TaskStatusDTO } from './../dto/taskStatusDTO';
 import { HttpException } from '@nestjs/common/exceptions/http.exception';
 import { UsersService } from 'src/dataAccess/services/usersService';
 import { TaskDTO, UserTaskDTO } from './../dto/taskDTO';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskEntity } from '../entity/task.entity';
 import { validate } from 'class-validator';
 import { EnumTaskStatus } from 'src/buisness/enums/EnumTaskStatus';
 import { TaskLog } from '../entity/taskLog.entity';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class TaskService {
@@ -19,6 +20,8 @@ export class TaskService {
   //private readonly taskRepository: Repository<TaskEntity>,
 
   constructor(
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
     @InjectRepository(TaskEntity)
     private taskRepository: Repository<TaskEntity>,
     usersService: UsersService,
@@ -39,9 +42,23 @@ export class TaskService {
   async remove(id: number): Promise<void> {
     await this.taskRepository.delete(id);
   }
+  async getAllDTOCache(): Promise<TaskDTO[]> {
+    const value = await this.cacheManager.get<TaskDTO[]>('get-taskdto');
+    if (value) {
+      return value;
+    }
+    const alltask = await this.getAll();
+    return await this.cacheManager.set<TaskDTO[]>('get-taskdto', alltask, {
+      ttl: 300,
+    });
+  }
+  async deleteCache() {
+    await this.cacheManager.del('get-taskdto');
+  }
+
   async getOneTask(id: number): Promise<TaskDTO> {
     const taskEntity = await this.findOne(id);
-    const AllUsers = await this.usersService.findAll();
+    const AllUsers = await this.usersService.getAllCache();
 
     const result = new TaskDTO();
     result.id = taskEntity.id;
@@ -131,7 +148,7 @@ export class TaskService {
     return returnList;
   }
   async checkUserId(ownerId: number, creatorId: number): Promise<boolean> {
-    const AllUsers = await this.usersService.findAll();
+    const AllUsers = await this.usersService.getAllCache();
 
     if (
       !(
@@ -206,7 +223,7 @@ export class TaskService {
         ownerUser.lastName +
         ' ';
       this.taskLogService.create(newTaskLog);
-
+      this.deleteCache();
       return newTask;
     }
   }
@@ -251,6 +268,7 @@ export class TaskService {
     }
 
     this.taskLogService.create(newTaskLog);
+    this.deleteCache();
     ///task log create
 
     return updateTask;

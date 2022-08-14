@@ -1,6 +1,7 @@
 import { CreateUserDTO } from '../dto/createUserDTO';
 import { UsersEntity } from './../entity/users.entity';
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 //import { Repository } from 'typeorm';
 import { Repository, getRepository, DeleteResult } from 'typeorm';
@@ -13,9 +14,23 @@ import * as argon2 from 'argon2';
 @Injectable()
 export class UsersService {
   constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @InjectRepository(UsersEntity)
     private usersRepository: Repository<UsersEntity>,
   ) {}
+  async getAllCache(): Promise<UsersEntity[]> {
+    const value = await this.cacheManager.get<UsersEntity[]>('get-user');
+    if (value) {
+      return value;
+    }
+    const allUser = await this.findAll();
+    return await this.cacheManager.set<UsersEntity[]>('get-user', allUser, {
+      ttl: 300,
+    });
+  }
+  async deleteCache() {
+    await this.cacheManager.del('get-user');
+  }
 
   findAll(): Promise<UsersEntity[]> {
     return this.usersRepository.find();
@@ -83,16 +98,20 @@ export class UsersService {
     } else {
       const savedUser = await this.usersRepository.save(newUser);
       //      return this.buildUserRO(savedUser);
+      this.deleteCache();
       return newUser;
     }
+    
   }
 
   async update(id: number, dto: UpdateUserDto): Promise<UsersEntity> {
-    let toUpdate = await this.findOne(id);
+    const toUpdate = await this.findOne(id);
     delete toUpdate.password;
     //delete toUpdate.favorites;
 
-    let updated = Object.assign(toUpdate, dto);
+    const updated = Object.assign(toUpdate, dto);
+    this.deleteCache();
     return await this.usersRepository.save(updated);
+
   }
 }
