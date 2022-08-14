@@ -1,10 +1,24 @@
-import { TestModule } from './dataAccess/module/test.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { TaskLogService } from './dataAccess/services/taskLogService';
+import { TaskEntity } from './dataAccess/entity/task.entity';
+import { TaskService } from './dataAccess/services/taskService';
+import { JwtService } from '@nestjs/jwt';
+import { AuthService } from './dataAccess/services/authService';
+import { UsersModule } from './dataAccess/module/users.module';
+import { UsersController } from './controllers/usersController';
+import { UsersEntity } from './dataAccess/entity/users.entity';
+import { UsersService } from './dataAccess/services/usersService';
+
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { TestController } from './controllers/testController';
-import { TestService } from './dataAccess/services/testService';
+
+import { AuthController } from './controllers/authController';
+import { TaskModule } from './dataAccess/module/task.module';
+import { TaskController } from './controllers/taskController';
+import { TaskLogModule } from './dataAccess/module/taskLog.module';
+import { TaskLog, TaskLogSchema } from './dataAccess/entity/taskLog.entity';
 
 @Module({
   imports: [
@@ -15,16 +29,29 @@ import { TestService } from './dataAccess/services/testService';
       username: 'root',
       password: '',
       database: 'test',
-      entities: ['src/**/**.entity{.ts,.js}'],
-      //synchronize: true,
-      synchronize: false,
-      migrations: ['dist/migrations/*{.ts,.js}'],
-      migrationsTableName: 'migrations_typeorm',
-      migrationsRun: true,
+      //entities: ['src/**/**.entity{.ts,.js}'],
+      entities: [UsersEntity, TaskEntity],
+      synchronize: true,
+      //synchronize: false,
+      //migrations: ['dist/migrations/*{.ts,.js}'],
+      //migrationsTableName: 'migrations_typeorm',
+      //migrationsRun: true,
     }),
-    TestModule,
+    MongooseModule.forRoot('mongodb://localhost/taskLog'),
+    MongooseModule.forFeature([{ name: TaskLog.name, schema: TaskLogSchema }]),
+
+    UsersModule,
+    TaskModule,
+    TaskLogModule,
   ],
-  controllers: [AppController, TestController],
-  providers: [AppService, TestService],
+  controllers: [AppController, UsersController, AuthController, TaskController],
+  providers: [
+    AppService,
+    UsersService,
+    AuthService,
+    JwtService,
+    TaskService,
+    TaskLogService,
+  ],
 })
 export class AppModule {}
