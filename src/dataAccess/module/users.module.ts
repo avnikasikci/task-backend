@@ -15,7 +15,6 @@ import { UsersService } from '../services/usersService';
   imports: [TypeOrmModule.forFeature([UsersEntity])],
   exports: [TypeOrmModule, UsersService],
   providers: [UsersService, JwtService, AuthService],
-
 })
 //export class UsersModule {}
 export class UsersModule implements NestModule {
