@@ -60,8 +60,9 @@ export class TaskController {
   }
 
   @Put('update')
-  async update(@Body('task') userData: TaskDTO) {
-    return await this.taskService.update(userData.id, userData);
+  async update(@Body('task') taskData: TaskDTO) {
+    taskData.updatedAt = new Date().toString();
+    return await this.taskService.update(taskData.id, taskData);
   }
   @Delete(':slug')
   async delete(@Request() req, @Param() params): Promise<any> {

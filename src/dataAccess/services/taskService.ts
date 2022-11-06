@@ -150,27 +150,29 @@ export class TaskService {
   async checkUserId(ownerId: number, creatorId: number): Promise<boolean> {
     const AllUsers = await this.usersService.getAllCache();
 
+    let checkOwner=AllUsers.filter((x) => x.id ==ownerId);
+    let checkOwnerLenght=checkOwner.length;
     if (
-      !(
-        AllUsers.filter((x) => x.id == ownerId).length > 0 &&
+      (
+        AllUsers.filter((x) => x.id == ownerId).length >0 &&
         AllUsers.filter((x) => x.id == creatorId).length > 0
       )
     ) {
       return true;
     }
-    false;
+  return  false;
   }
   checkStatusId(statusId: number): boolean {
     const allStatus = this.getAllTaskStatus();
     if (allStatus.filter((x) => x.id == statusId).length > 0) {
-      return false;
+      return true;
     }
-    return true;
+    return false;
   }
 
   async create(dto: TaskDTO): Promise<TaskEntity> {
     const checkUserId = await this.checkUserId(dto.ownerId, dto.creatorId);
-    if (checkUserId) {
+    if (!checkUserId) {
       const errors = { userIds: 'Creator or Owner user not found' };
       throw new HttpException(
         { message: 'User Not Found', errors },
@@ -178,7 +180,7 @@ export class TaskService {
       );
     }
     const checkStatusId = this.checkStatusId(dto.statusId);
-    if (checkStatusId) {
+    if (!checkStatusId) {
       const errors = { statusId: 'Status not found' };
       throw new HttpException(
         { message: 'Status Not Found', errors },
@@ -195,8 +197,10 @@ export class TaskService {
 
     newTask.ownerId = dto.ownerId;
     newTask.creatorId = dto.creatorId;
-    newTask.createdAt = dto.createdAt;
-    newTask.updatedAt = dto.updatedAt;
+    //newTask.createdAt = dto.createdAt;
+    newTask.createdAt =  new Date().toString();
+    //newTask.updatedAt = dto.updatedAt;
+    newTask.updatedAt =  new Date().toString();
 
     const errors = await validate(newTask);
     if (errors.length > 0) {
